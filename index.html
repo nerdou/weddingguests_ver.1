@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>하객 명단</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#faf7f4; --card:#ffffff; --ink:#2b2522; --sub:#7a6f69; --line:#ebe3dc;
+    --groom:#4a6fa5; --groom-soft:#e8eef7;
+    --bride:#c0607a; --bride-soft:#f9e9ee;
+    --both:#7b5ea7; --both-soft:#efe9f7;
+    --sure:#3f8a5f; --sure-soft:#e5f2ea;
+    --unsure:#c78a2c; --unsure-soft:#fbf1df;
+    --accent:#8b6f5c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',system-ui,sans-serif;font-size:15px;line-height:1.5}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 16px 60px}
+  header{text-align:center;margin-bottom:22px}
+  header h1{font-family:'Noto Serif KR',serif;font-size:28px;margin:0;letter-spacing:2px}
+  header p{margin:4px 0 0;color:var(--sub);font-size:13px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(80,60,40,.04)}
+  .card h2{font-size:16px;margin:0 0 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .card h2 small{font-weight:400;color:var(--sub);font-size:13px}
+
+  /* 요약 표 */
+  .summary{width:100%;border-collapse:separate;border-spacing:0;text-align:center}
+  .summary th,.summary td{padding:12px 6px;border-bottom:1px solid var(--line)}
+  .summary thead th{font-size:13px;color:var(--sub);font-weight:500}
+  .summary tbody th{text-align:left;font-weight:700}
+  .summary td{font-size:22px;font-weight:700}
+  .summary td small{display:block;font-size:11px;font-weight:400;color:var(--sub)}
+  .summary tr.total th,.summary tr.total td{border-bottom:none;background:#f6f1ec}
+  .summary tr.total th{border-radius:10px 0 0 10px}
+  .summary tr.total td:last-child{border-radius:0 10px 10px 0}
+  .c-groom{color:var(--groom)} .c-bride{color:var(--bride)} .c-both{color:var(--both)} .c-sure{color:var(--sure)} .c-unsure{color:var(--unsure)}
+
+  /* 입력 폼 */
+  .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;align-items:end}
+  .f{display:flex;flex-direction:column;gap:4px}
+  .f label{font-size:12px;color:var(--sub)}
+  .span2{grid-column:span 2} .span3{grid-column:span 3} .span6{grid-column:span 6}
+  input,select,textarea{font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);width:100%}
+  input:focus,select:focus{outline:2px solid #d9c6b6;border-color:#d9c6b6}
+  .seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+  .seg button{flex:1;border:none;background:none;padding:9px 6px;font:inherit;cursor:pointer;color:var(--sub);white-space:nowrap}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button.on[data-v="groom"]{background:var(--groom);color:#fff}
+  .seg button.on[data-v="bride"]{background:var(--bride);color:#fff}
+  .seg button.on[data-v="both"]{background:var(--both);color:#fff}
+  .seg button.on[data-v="sure"]{background:var(--sure);color:#fff}
+  .seg button.on[data-v="unsure"]{background:var(--unsure);color:#fff}
+  .seg button.on[data-v="all"]{background:var(--accent);color:#fff}
+  .btn{font:inherit;border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 14px;cursor:pointer;color:var(--ink)}
+  .btn:hover{background:#f6f1ec}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+  .btn.primary:hover{filter:brightness(1.07)}
+  .btn.sm{padding:5px 10px;font-size:13px}
+  .btn.danger{color:#b33}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+  /* 필터 결과 */
+  .result{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 6px}
+  .pill{flex:1;min-width:120px;border-radius:12px;padding:12px 14px;background:#f6f1ec}
+  .pill b{display:block;font-size:24px}
+  .pill span{font-size:12px;color:var(--sub)}
+  .pill.sure{background:var(--sure-soft)} .pill.unsure{background:var(--unsure-soft)}
+  .cattable{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
+  .cattable th,.cattable td{padding:8px;border-bottom:1px solid var(--line);text-align:right}
+  .cattable th:first-child,.cattable td:first-child,.cattable th:nth-child(2),.cattable td:nth-child(2){text-align:left}
+  .cattable thead th{color:var(--sub);font-weight:500;font-size:12px}
+
+  /* 명단 */
+  .list{width:100%;border-collapse:collapse}
+  .list th{font-size:12px;color:var(--sub);font-weight:500;text-align:left;padding:8px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap}
+  .list td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .list td.num{text-align:center;font-weight:700}
+  .tag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:500;white-space:nowrap}
+  .tag.groom{background:var(--groom-soft);color:var(--groom)}
+  .tag.bride{background:var(--bride-soft);color:var(--bride)}
+  .tag.both{background:var(--both-soft);color:var(--both)}
+  .tag.sure{background:var(--sure-soft);color:var(--sure);cursor:pointer;border:none;font:inherit;font-size:12px}
+  .tag.unsure{background:var(--unsure-soft);color:var(--unsure);cursor:pointer;border:none;font:inherit;font-size:12px}
+  .memo{color:var(--sub);font-size:13px}
+  .empty{text-align:center;color:var(--sub);padding:30px 0}
+  .acts{white-space:nowrap;text-align:right}
+
+  dialog{border:none;border-radius:14px;padding:0;max-width:720px;width:calc(100% - 32px);box-shadow:0 10px 40px rgba(0,0,0,.2)}
+  dialog::backdrop{background:rgba(40,30,25,.35)}
+  .dlg{padding:20px}
+  .dlg h3{margin:0 0 14px}
+  .catcols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .catcol h4{margin:0 0 8px;font-size:14px}
+  .catitem{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;font-size:14px}
+  .catitem button{border:none;background:none;color:#b33;cursor:pointer;font-size:16px;line-height:1}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#2b2522;color:#fff;padding:10px 18px;border-radius:99px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none}
+  .toast.show{opacity:1}
+
+  @media (max-width:760px){
+    .grid{grid-template-columns:repeat(2,1fr)}
+    .span2,.span3,.span6{grid-column:span 2}
+    .summary td{font-size:18px}
+    .catcols{grid-template-columns:1fr}
+    .list .hide-m{display:none}
+  }
+  @media print{
+    .noprint{display:none!important}
+    body{background:#fff}
+    .card{box-shadow:none;break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>하객 명단</h1>
+    <p>신랑 · 신부 · 겹지인 하객을 기록하고 인원을 한눈에 확인하세요</p>
+  </header>
+
+  <!-- 전체 요약 -->
+  <section class="card">
+    <h2>전체 인원 요약 <small>단위: 명</small></h2>
+    <table class="summary">
+      <thead><tr><th></th><th class="c-sure">참석 확실</th><th class="c-unsure">참석 불확실</th><th>합계 (확실+불확실)</th></tr></thead>
+      <tbody id="summaryBody"></tbody>
+    </table>
+  </section>
+
+  <!-- 입력 -->
+  <section class="card noprint">
+    <h2 id="formTitle">하객 추가 <button class="btn sm" id="openCat" type="button">카테고리 관리</button></h2>
+    <form id="guestForm" class="grid" autocomplete="off">
+      <div class="f span2"><label>구분</label>
+        <div class="seg" id="fSide"><button type="button" data-v="groom" class="on">신랑측</button><button type="button" data-v="bride">신부측</button><button type="button" data-v="both">겹지인</button></div>
+      </div>
+      <div class="f span2"><label>카테고리</label><select id="fCat"></select></div>
+      <div class="f span2"><label>참석 여부</label>
+        <div class="seg" id="fStatus"><button type="button" data-v="sure" class="on">확실</button><button type="button" data-v="unsure">불확실</button></div>
+      </div>
+      <div class="f span6"><label>이름 <span style="color:var(--accent)">— 입력 후 Enter를 누르면 바로 추가돼요</span></label>
+        <div class="row" style="flex-wrap:nowrap">
+          <input id="fName" placeholder="예: 김철수 (Enter)" required autofocus>
+          <button type="button" class="btn" id="cancelEdit" hidden style="white-space:nowrap">수정 취소</button>
+          <button type="submit" class="btn primary" id="submitBtn" style="white-space:nowrap">추가</button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <!-- 필터 & 결과 -->
+  <section class="card">
+    <h2>필터로 인원 확인하기</h2>
+    <div class="grid noprint">
+      <div class="f span2"><label>구분</label>
+        <div class="seg" id="qSide"><button type="button" data-v="all" class="on">전체</button><button type="button" data-v="groom">신랑측</button><button type="button" data-v="bride">신부측</button><button type="button" data-v="both">겹지인</button></div>
+      </div>
+      <div class="f span2"><label>참석 여부</label>
+        <div class="seg" id="qStatus"><button type="button" data-v="all" class="on">확실+불확실</button><button type="button" data-v="sure">확실만</button><button type="button" data-v="unsure">불확실만</button></div>
+      </div>
+      <div class="f"><label>카테고리</label><select id="qCat"></select></div>
+      <div class="f"><label>이름 검색</label><input id="qText" placeholder="검색"></div>
+    </div>
+
+    <div class="result" id="resultPills"></div>
+    <table class="cattable" id="catTable"></table>
+  </section>
+
+  <!-- 명단 -->
+  <section class="card">
+    <h2><span>하객 명단 <small id="listInfo"></small></span>
+      <span class="row noprint">
+        <button class="btn sm" id="csvBtn">엑셀(CSV) 내보내기</button>
+        <button class="btn sm" id="backupBtn">백업 저장</button>
+        <button class="btn sm" id="restoreBtn">백업 불러오기</button>
+        <button class="btn sm" onclick="window.print()">인쇄</button>
+        <button class="btn sm danger" id="clearBtn">전체 삭제</button>
+        <input type="file" id="restoreFile" accept=".json" hidden>
+      </span>
+    </h2>
+    <div style="overflow-x:auto">
+      <table class="list">
+        <thead><tr>
+          <th data-sort="side">구분</th><th data-sort="category">카테고리</th><th data-sort="name">이름</th>
+          <th data-sort="status">참석</th><th class="noprint"></th>
+        </tr></thead>
+        <tbody id="listBody"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- 카테고리 관리 -->
+<dialog id="catDlg">
+  <div class="dlg">
+    <h3>카테고리 관리</h3>
+    <div class="catcols">
+      <div class="catcol"><h4 class="c-groom">신랑측</h4><div id="catGroom"></div>
+        <div class="row"><input id="newCatGroom" placeholder="새 카테고리"><button class="btn sm" data-add="groom">추가</button></div></div>
+      <div class="catcol"><h4 class="c-bride">신부측</h4><div id="catBride"></div>
+        <div class="row"><input id="newCatBride" placeholder="새 카테고리"><button class="btn sm" data-add="bride">추가</button></div></div>
+      <div class="catcol"><h4 class="c-both">겹지인</h4><div id="catBoth"></div>
+        <div class="row"><input id="newCatBoth" placeholder="새 카테고리"><button class="btn sm" data-add="both">추가</button></div></div>
+    </div>
+    <p class="memo" style="margin:12px 0 0">카테고리를 삭제하면 해당 하객은 '기타'로 옮겨집니다.</p>
+    <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn primary" id="closeCat">닫기</button></div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY = 'wedding-guest-list-v1';
+const SIDE = {groom:'신랑측', bride:'신부측', both:'겹지인'};
+const SIDE_ORDER = ['groom','bride','both'];
+const BOTH_CATS = ['친구','직장','지인','기타'];
+const STATUS = {sure:'확실', unsure:'불확실'};
+const DEFAULT_CATS = ['가족','친척','친구','직장','지인','기타'];
+
+let state = {
+  categories:{groom:[...DEFAULT_CATS], bride:[...DEFAULT_CATS], both:[...BOTH_CATS]},
+  guests:[]
+};
+let form = {side:'groom', status:'sure'};
+let filter = {side:'all', status:'all', category:'all', text:''};
+let sort = {key:null, dir:1};
+let editingId = null;
+
+// ---------- 저장 ----------
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){ const d = JSON.parse(raw); if(d && d.guests && d.categories) state = normalize(d); }
+  }catch(e){}
+}
+function normalize(d){
+  d.guests.forEach(g=>g.count=1);
+  if(!d.categories.both) d.categories.both = [...BOTH_CATS];
+  return d;
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){ toast('브라우저 저장이 막혀 있어요. 백업 저장을 이용하세요.'); }
+}
+
+// ---------- 유틸 ----------
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sum = arr => arr.reduce((a,g)=>a+(Number(g.count)||0),0);
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1800); }
+function segInit(el, onChange){
+  el.addEventListener('click', e=>{
+    const b = e.target.closest('button'); if(!b) return;
+    el.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b));
+    onChange(b.dataset.v);
+  });
+}
+function segSet(el, v){ el.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x.dataset.v===v)); }
+
+// ---------- 렌더 ----------
+function renderSummary(){
+  const g = state.guests;
+  const cell = (side, status) => sum(g.filter(x => (side==='all'||x.side===side) && (status==='all'||x.status===status)));
+  const cnt = (side, status) => g.filter(x => (side==='all'||x.side===side) && (status==='all'||x.status===status)).length;
+  const row = (side, label, cls, total) => `
+    <tr class="${total?'total':''}"><th class="${cls}">${label}</th>
+      <td class="c-sure">${cell(side,'sure')}</td>
+      <td class="c-unsure">${cell(side,'unsure')}</td>
+      <td>${cell(side,'all')}</td></tr>`;
+  $('#summaryBody').innerHTML = row('groom','신랑측','c-groom') + row('bride','신부측','c-bride') + row('both','겹지인','c-both') + row('all','합계','',true);
+}
+
+function renderFormCats(keep){
+  const sel = $('#fCat'); const cur = keep ?? sel.value;
+  sel.innerHTML = state.categories[form.side].map(c=>`<option>${esc(c)}</option>`).join('');
+  if(state.categories[form.side].includes(cur)) sel.value = cur;
+}
+
+function renderFilterCats(){
+  const sel = $('#qCat');
+  let cats = filter.side==='all'
+    ? [...new Set([...state.categories.groom, ...state.categories.bride, ...state.categories.both])]
+    : state.categories[filter.side];
+  if(filter.category!=='all' && !cats.includes(filter.category)) filter.category='all';
+  sel.innerHTML = `<option value="all">전체</option>` + cats.map(c=>`<option ${c===filter.category?'selected':''}>${esc(c)}</option>`).join('');
+}
+
+function filtered(){
+  const t = filter.text.trim().toLowerCase();
+  return state.guests.filter(g =>
+    (filter.side==='all' || g.side===filter.side) &&
+    (filter.status==='all' || g.status===filter.status) &&
+    (filter.category==='all' || g.category===filter.category) &&
+    (!t || g.name.toLowerCase().includes(t) || (g.memo||'').toLowerCase().includes(t))
+  );
+}
+
+function renderResult(){
+  const list = filtered();
+  const label = [
+    filter.side==='all' ? '신랑+신부+겹지인' : SIDE[filter.side],
+    filter.status==='all' ? '확실+불확실' : STATUS[filter.status]+'만',
+    filter.category==='all' ? null : filter.category
+  ].filter(Boolean).join(' · ');
+  const sure = list.filter(g=>g.status==='sure'), unsure = list.filter(g=>g.status==='unsure');
+  let pills = `<div class="pill"><span>필터 결과 (${esc(label)})</span><b>${sum(list)}명</b></div>`;
+  if(filter.status==='all'){
+    pills += `<div class="pill sure"><span>그중 확실</span><b class="c-sure">${sum(sure)}명</b></div>
+              <div class="pill unsure"><span>그중 불확실</span><b class="c-unsure">${sum(unsure)}명</b></div>`;
+  }
+  if(filter.side==='all'){
+    const n = s => sum(list.filter(g=>g.side===s));
+    pills += `<div class="pill"><span>신랑측 / 신부측 / 겹지인</span><b><span style="font-size:24px;color:var(--groom)">${n('groom')}</span> / <span style="font-size:24px;color:var(--bride)">${n('bride')}</span> / <span style="font-size:24px;color:var(--both)">${n('both')}</span></b></div>`;
+  }
+  $('#resultPills').innerHTML = pills;
+
+  // 카테고리별 표
+  const groups = {};
+  list.forEach(g => {
+    const k = g.side+'|'+g.category;
+    (groups[k] ||= {side:g.side, category:g.category, sure:0, unsure:0});
+    groups[k][g.status] += Number(g.count)||0;
+  });
+  const order = s => [...state.categories[s]];
+  const rows = Object.values(groups).sort((a,b)=>
+    a.side!==b.side ? SIDE_ORDER.indexOf(a.side)-SIDE_ORDER.indexOf(b.side) : order(a.side).indexOf(a.category)-order(b.side).indexOf(b.category));
+  if(!rows.length){ $('#catTable').innerHTML=''; return; }
+  $('#catTable').innerHTML = `<thead><tr><th>구분</th><th>카테고리</th><th class="c-sure">확실</th><th class="c-unsure">불확실</th><th>합계</th></tr></thead><tbody>`+
+    rows.map(r=>`<tr><td><span class="tag ${r.side}">${SIDE[r.side]}</span></td><td>${esc(r.category)}</td>
+      <td class="c-sure">${r.sure}</td><td class="c-unsure">${r.unsure}</td><td><b>${r.sure+r.unsure}</b></td></tr>`).join('')+'</tbody>';
+}
+
+function renderList(){
+  let list = filtered();
+  if(sort.key){
+    list = [...list].sort((a,b)=>{
+      let x=a[sort.key], y=b[sort.key];
+      if(sort.key==='count') return (x-y)*sort.dir;
+      return String(x).localeCompare(String(y),'ko')*sort.dir;
+    });
+  }
+  $('#listInfo').textContent = `· 표시 ${list.length}명 / 전체 ${state.guests.length}명`;
+  if(!list.length){
+    $('#listBody').innerHTML = `<tr><td colspan="5" class="empty">${state.guests.length?'조건에 맞는 하객이 없어요.':'아직 등록된 하객이 없어요. 위에서 추가해 보세요.'}</td></tr>`;
+    return;
+  }
+  $('#listBody').innerHTML = list.map(g=>`
+    <tr>
+      <td><span class="tag ${g.side}">${SIDE[g.side]}</span></td>
+      <td>${esc(g.category)}</td>
+      <td><b>${esc(g.name)}</b></td>
+      <td><button class="tag ${g.status}" data-toggle="${g.id}" title="눌러서 바꾸기">${STATUS[g.status]}</button></td>
+      <td class="acts noprint"><button class="btn sm" data-edit="${g.id}">수정</button> <button class="btn sm danger" data-del="${g.id}">삭제</button></td>
+    </tr>`).join('');
+}
+
+function renderAll(){ renderSummary(); renderFilterCats(); renderResult(); renderList(); }
+
+// ---------- 입력 폼 ----------
+segInit($('#fSide'), v=>{ form.side=v; renderFormCats(); });
+segInit($('#fStatus'), v=>{ form.status=v; });
+
+$('#guestForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const name = $('#fName').value.trim();
+  if(!name) return;
+  const data = { name, side:form.side, category:$('#fCat').value, status:form.status, count:1 };
+  if(!editingId && state.guests.some(g=>g.name===name && g.side===form.side)){
+    toast(`같은 이름(${name})이 ${SIDE[form.side]}에 이미 있어요 — 추가는 됐어요`);
+  }
+  if(editingId){
+    Object.assign(state.guests.find(g=>g.id===editingId), data);
+    toast(`${name} 님 정보를 수정했어요`);
+    endEdit();
+  }else{
+    state.guests.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6), ...data});
+    if(!$('#toast').classList.contains('show')) toast(`${name} 님을 추가했어요`);
+  }
+  save();
+  $('#fName').value='';
+  $('#fName').focus();
+  renderAll();
+});
+
+function startEdit(id){
+  const g = state.guests.find(x=>x.id===id); if(!g) return;
+  editingId = id;
+  form.side=g.side; form.status=g.status;
+  segSet($('#fSide'), g.side); segSet($('#fStatus'), g.status);
+  renderFormCats(g.category);
+  $('#fName').value=g.name;
+  $('#formTitle').firstChild.textContent='하객 정보 수정 ';
+  $('#submitBtn').textContent='수정 저장';
+  $('#cancelEdit').hidden=false;
+  $('#guestForm').scrollIntoView({behavior:'smooth', block:'center'});
+  $('#fName').focus();
+}
+function endEdit(){
+  editingId=null;
+  $('#formTitle').firstChild.textContent='하객 추가 ';
+  $('#submitBtn').textContent='추가';
+  $('#cancelEdit').hidden=true;
+  $('#fName').value='';
+}
+$('#cancelEdit').onclick = endEdit;
+
+// ---------- 명단 동작 ----------
+$('#listBody').addEventListener('click', e=>{
+  const t = e.target;
+  if(t.dataset.toggle){
+    const g = state.guests.find(x=>x.id===t.dataset.toggle);
+    g.status = g.status==='sure'?'unsure':'sure'; save(); renderAll();
+  }else if(t.dataset.edit){ startEdit(t.dataset.edit); }
+  else if(t.dataset.del){
+    const g = state.guests.find(x=>x.id===t.dataset.del);
+    if(confirm(`${g.name} 님을 명단에서 삭제할까요?`)){
+      state.guests = state.guests.filter(x=>x.id!==g.id);
+      if(editingId===g.id) endEdit();
+      save(); renderAll();
+    }
+  }
+});
+document.querySelectorAll('.list th[data-sort]').forEach(th=>th.addEventListener('click',()=>{
+  const k = th.dataset.sort;
+  sort = sort.key===k ? {key:k, dir:-sort.dir} : {key:k, dir:1};
+  renderList();
+}));
+
+// ---------- 필터 ----------
+segInit($('#qSide'), v=>{ filter.side=v; renderAll(); });
+segInit($('#qStatus'), v=>{ filter.status=v; renderResult(); renderList(); });
+$('#qCat').addEventListener('change', e=>{ filter.category=e.target.value; renderResult(); renderList(); });
+$('#qText').addEventListener('input', e=>{ filter.text=e.target.value; renderResult(); renderList(); });
+
+// ---------- 카테고리 관리 ----------
+function renderCatDlg(){
+  SIDE_ORDER.forEach(s=>{
+    const box = $({groom:'#catGroom',bride:'#catBride',both:'#catBoth'}[s]);
+    box.innerHTML = state.categories[s].map(c=>{
+      const n = state.guests.filter(g=>g.side===s&&g.category===c).length;
+      return `<div class="catitem"><span>${esc(c)} <small class="memo">${n}명</small></span>${c==='기타'?'':`<button data-delcat="${s}" data-name="${esc(c)}" title="삭제">×</button>`}</div>`;
+    }).join('');
+  });
+}
+$('#openCat').onclick = ()=>{ renderCatDlg(); $('#catDlg').showModal(); };
+$('#closeCat').onclick = ()=>{ $('#catDlg').close(); renderFormCats(); renderAll(); };
+$('#catDlg').addEventListener('click', e=>{
+  const t = e.target;
+  if(t.dataset.add){
+    const s = t.dataset.add; const inp = $({groom:'#newCatGroom',bride:'#newCatBride',both:'#newCatBoth'}[s]);
+    const name = inp.value.trim();
+    if(!name) return;
+    if(state.categories[s].includes(name)){ toast('이미 있는 카테고리예요'); return; }
+    const i = state.categories[s].indexOf('기타');
+    i>=0 ? state.categories[s].splice(i,0,name) : state.categories[s].push(name);
+    inp.value=''; save(); renderCatDlg();
+  }
+  if(t.dataset.delcat){
+    const s=t.dataset.delcat, name=t.dataset.name;
+    const n = state.guests.filter(g=>g.side===s&&g.category===name).length;
+    if(n && !confirm(`'${name}'에 하객 ${n}명이 있어요. 삭제하면 '기타'로 옮겨집니다. 계속할까요?`)) return;
+    state.categories[s] = state.categories[s].filter(c=>c!==name);
+    if(!state.categories[s].includes('기타')) state.categories[s].push('기타');
+    state.guests.forEach(g=>{ if(g.side===s&&g.category===name) g.category='기타'; });
+    save(); renderCatDlg();
+  }
+});
+[['#newCatGroom','groom'],['#newCatBride','bride'],['#newCatBoth','both']].forEach(([id,s])=>$(id).addEventListener('keydown',e=>{
+  if(e.key==='Enter'){ e.preventDefault(); $(`[data-add="${s}"]`).click(); }
+}));
+
+// ---------- 내보내기 / 백업 ----------
+function download(name, content, type){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+const today = ()=>new Date().toISOString().slice(0,10);
+$('#csvBtn').onclick = ()=>{
+  const q = v => `"${String(v??'').replace(/"/g,'""')}"`;
+  const rows = [['구분','카테고리','이름','참석여부'].map(q).join(',')]
+    .concat(filtered().map(g=>[SIDE[g.side],g.category,g.name,STATUS[g.status]].map(q).join(',')));
+  download(`하객명단_${today()}.csv`, '\uFEFF'+rows.join('\r\n'), 'text/csv;charset=utf-8');
+  toast('현재 필터 결과를 CSV로 저장했어요');
+};
+$('#backupBtn').onclick = ()=>{
+  download(`하객명단_백업_${today()}.json`, JSON.stringify(state,null,2), 'application/json');
+  toast('백업 파일을 저장했어요');
+};
+$('#restoreBtn').onclick = ()=>$('#restoreFile').click();
+$('#restoreFile').onchange = e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      const d = JSON.parse(r.result);
+      if(!d.guests || !d.categories) throw 0;
+      if(!confirm(`백업의 하객 ${d.guests.length}명으로 현재 명단을 바꿀까요?`)) return;
+      state = normalize(d); save(); endEdit(); renderFormCats(); renderAll(); toast('백업을 불러왔어요');
+    }catch(err){ alert('올바른 백업 파일이 아니에요.'); }
+  };
+  r.readAsText(f); e.target.value='';
+};
+$('#clearBtn').onclick = ()=>{
+  if(!state.guests.length) return;
+  if(confirm('모든 하객 기록을 삭제할까요? (카테고리는 유지됩니다)\n먼저 백업 저장을 권장해요.')){
+    state.guests=[]; save(); endEdit(); renderAll();
+  }
+};
+
+// ---------- 시작 ----------
+load();
+renderFormCats();
+renderAll();
+</script>
+</body>
+</html>
